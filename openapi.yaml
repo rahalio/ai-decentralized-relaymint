@@ -1,0 +1,432 @@
+openapi: 3.0.3
+info:
+  title: Relaymint
+  version: 0.1.0
+  description: >-
+    Connectivity campaign marketplace for NGOs, brands, and app distributors to
+    fund mesh-density programmes and settle coverage and outcome rewards.
+  x-product-slug: ai-decentralized-relaymint
+  x-source: ai-in-decentralized+ai/InfoDeck_12152017_email/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Campaigns
+    description: Sponsor campaigns with geography and KPI targets
+  - name: Programmes
+    description: Multi-campaign programmes and co-funding
+  - name: Rewards
+    description: Reward rules and recipient eligibility
+  - name: Coverage
+    description: Density and outcome attestation
+  - name: Settlements
+    description: Escrow, milestone release, and payouts
+  - name: Reporting
+    description: Sponsor CSR and finance exports
+paths:
+  /v1/campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [Campaigns]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - name: sponsorType
+          in: query
+          schema:
+            type: string
+            enum: [ngo, brand, publisher, app_distributor]
+      responses:
+        "200":
+          description: Campaigns page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeCampaign"
+    post:
+      operationId: createCampaign
+      tags: [Campaigns]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignCreate"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeCampaign"
+  /v1/campaigns/{campaignId}:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+    get:
+      operationId: getCampaign
+      tags: [Campaigns]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeCampaign"
+  /v1/programmes:
+    get:
+      operationId: listProgrammes
+      tags: [Programmes]
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Programmes page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeProgramme"
+    post:
+      operationId: createProgramme
+      tags: [Programmes]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgrammeCreate"
+      responses:
+        "201":
+          description: Programme created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeProgramme"
+  /v1/campaigns/{campaignId}/rewards:
+    parameters:
+      - $ref: "#/components/parameters/CampaignId"
+    post:
+      operationId: defineCampaignRewards
+      tags: [Rewards]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RewardRule"
+      responses:
+        "201":
+          description: Reward rules defined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeRewardRule"
+  /v1/coverage/attestations:
+    post:
+      operationId: submitCoverageAttestation
+      tags: [Coverage]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CoverageAttestation"
+      responses:
+        "201":
+          description: Attestation recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeCoverageAttestation"
+  /v1/coverage/snapshots:
+    get:
+      operationId: listCoverageSnapshots
+      tags: [Coverage]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: campaignId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Coverage snapshots
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEnvelopeCoverageSnapshot"
+  /v1/settlements/escrow:
+    post:
+      operationId: fundCampaignEscrow
+      tags: [Settlements]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EscrowFundRequest"
+      responses:
+        "201":
+          description: Escrow funded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeEscrowAccount"
+  /v1/settlements/payouts:
+    post:
+      operationId: executeRewardPayout
+      tags: [Settlements]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayoutRequest"
+      responses:
+        "202":
+          description: Payout accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeRewardPayout"
+  /v1/reports/campaign-outcomes:
+    get:
+      operationId: getCampaignOutcomeReport
+      tags: [Reporting]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: campaignId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Outcome report for sponsor audit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataEnvelopeCampaignOutcomeReport"
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    CampaignId:
+      name: campaignId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: number, format: double }
+        currency: { type: string }
+    Campaign:
+      type: object
+      required: [id, name, sponsorType, geography, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        sponsorType: { type: string, enum: [ngo, brand, publisher, app_distributor] }
+        geography: { type: string }
+        status: { type: string, enum: [draft, active, paused, completed] }
+        kpiTarget: { type: string }
+        budget: { $ref: "#/components/schemas/Money" }
+    CampaignCreate:
+      type: object
+      required: [name, sponsorType, geography, kpiTarget, budget]
+      properties:
+        name: { type: string }
+        sponsorType: { type: string }
+        geography: { type: string }
+        kpiTarget: { type: string }
+        budget: { $ref: "#/components/schemas/Money" }
+        settlementCurrency: { type: string, enum: [fiat, token] }
+    Programme:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        campaignIds: { type: array, items: { type: string } }
+    ProgrammeCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        campaignIds: { type: array, items: { type: string } }
+    RewardRule:
+      type: object
+      required: [metric, payoutPerUnit]
+      properties:
+        metric: { type: string, enum: [active_nodes, relay_gb, app_installs] }
+        payoutPerUnit: { $ref: "#/components/schemas/Money" }
+        recipientType: { type: string, enum: [gateway_operator, community_pool] }
+    CoverageAttestation:
+      type: object
+      required: [campaignId, milestoneId, evidenceRef]
+      properties:
+        campaignId: { type: string }
+        milestoneId: { type: string }
+        evidenceRef: { type: string }
+        nodeCount: { type: integer }
+        sampledAt: { type: string, format: date-time }
+    CoverageSnapshot:
+      type: object
+      properties:
+        campaignId: { type: string }
+        nodeCount: { type: integer }
+        gatewayCount: { type: integer }
+        capturedAt: { type: string, format: date-time }
+    EscrowFundRequest:
+      type: object
+      required: [campaignId, amount]
+      properties:
+        campaignId: { type: string }
+        amount: { $ref: "#/components/schemas/Money" }
+    EscrowAccount:
+      type: object
+      properties:
+        campaignId: { type: string }
+        balance: { $ref: "#/components/schemas/Money" }
+        status: { type: string, enum: [open, released, closed] }
+    PayoutRequest:
+      type: object
+      required: [campaignId, attestationId, recipientId]
+      properties:
+        campaignId: { type: string }
+        attestationId: { type: string }
+        recipientId: { type: string }
+    RewardPayout:
+      type: object
+      properties:
+        id: { type: string }
+        amount: { $ref: "#/components/schemas/Money" }
+        status: { type: string, enum: [pending, paid, failed] }
+    CampaignOutcomeReport:
+      type: object
+      properties:
+        campaignId: { type: string }
+        disbursed: { $ref: "#/components/schemas/Money" }
+        attestedNodes: { type: integer }
+        costPerConnectedUser: { $ref: "#/components/schemas/Money" }
+    DataEnvelopeCampaign:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/Campaign" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    DataEnvelopeProgramme:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/Programme" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    DataEnvelopeRewardRule:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/RewardRule" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    DataEnvelopeCoverageAttestation:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/CoverageAttestation" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    DataEnvelopeEscrowAccount:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/EscrowAccount" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    DataEnvelopeRewardPayout:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/RewardPayout" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    DataEnvelopeCampaignOutcomeReport:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/CampaignOutcomeReport" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeCampaign:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: "#/components/schemas/Campaign" } }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeProgramme:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: "#/components/schemas/Programme" } }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeCoverageSnapshot:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: "#/components/schemas/CoverageSnapshot" } }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
